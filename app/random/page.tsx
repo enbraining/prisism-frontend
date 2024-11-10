@@ -79,7 +79,6 @@ export default function Page() {
     });
 
     newSocket.on("get-room", (data) => {
-      console.log(data.roomId);
       setRoomId(data.roomId);
       newSocket.on(`sub-message-${data.roomId}`, handleMessage);
     });
@@ -107,7 +106,6 @@ export default function Page() {
 
   return (
     <main className="grid">
-      <h1>{roomId}</h1>
       <div className="bg-base-200 mx-auto sm:w-1/2 w-[90%] overflow-y-auto h-[75vh] my-5 rounded-2xl p-5">
         {chats.map((chat, index) => (
           <div
