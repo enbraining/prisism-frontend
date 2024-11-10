@@ -34,7 +34,7 @@ export default function Home() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             rooms.map((room: any) => (
               <Link
-                href={`/room?id=${room.id}`}
+                href={`/room/${room.id}`}
                 key={room.id}
                 className="flex items-center space-x-3 rtl:space-x-reverse hover:cursor-pointer group"
               >

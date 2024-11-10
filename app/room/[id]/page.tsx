@@ -1,6 +1,6 @@
 "use client";
 
-import { redirect, useSearchParams } from "next/navigation";
+import { redirect, useParams, useSearchParams } from "next/navigation";
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 
@@ -12,6 +12,7 @@ export interface MessageRequest {
 
 export default function Page() {
   const searchParams = useSearchParams();
+  const params = useParams();
   const messageRef = useRef<HTMLDivElement>();
 
   const [connected, setConnected] = useState(false);
@@ -52,7 +53,8 @@ export default function Page() {
   );
 
   useEffect(() => {
-    const roomId = searchParams.get("id");
+    const roomId = params.id;
+    console.log(params.id);
     const newSocket = io("http://localhost:3030/chat", {
       transports: ["websocket"],
       path: "/socket.io/",
