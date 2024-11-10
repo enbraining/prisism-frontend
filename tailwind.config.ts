@@ -17,6 +17,6 @@ export default {
   },
   plugins: [flyonui],
   flyonui: {
-    themes: ["corporate"],
+    themes: ["dark"],
   },
 } satisfies Config;

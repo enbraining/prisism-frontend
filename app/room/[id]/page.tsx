@@ -106,7 +106,7 @@ export default function Page() {
         placeholder="Type here"
         className="z-10 input max-w-sm fixed bottom-[2rem] left-1/2 -translate-x-1/2"
       />
-      <div className="sm:mx-auto w-full md:w-1/2 sm:px-16 min-h-screen border-x">
+      <div className="bg-base-200 mx-auto sm:w-1/2 w-[90%] overflow-auto h-[85vh] my-5 rounded-2xl p-5">
         {chats.map((chat, index) => (
           <div
             key={index}
@@ -120,13 +120,10 @@ export default function Page() {
               {chat.client}
               <time className="text-base-content/50">12:46</time>
             </div>
-            <div className="chat-bubble border">{chat.message}</div>
+            <div className="chat-bubble">{chat.message}</div>
           </div>
         ))}
-        <div
-          className="mt-24"
-          ref={messageRef as React.RefObject<HTMLDivElement>}
-        />
+        <div ref={messageRef as React.RefObject<HTMLDivElement>} />
       </div>
     </main>
   );
