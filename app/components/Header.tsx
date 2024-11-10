@@ -11,7 +11,7 @@ export default function Header() {
           Prisism
         </Link>
       </div>
-      <div className="navbar-end flex items-center gap-4">
+      {/* <div className="navbar-end flex items-center gap-4">
         <div className="dropdown relative inline-flex [--auto-close:inside] [--offset:8] [--placement:bottom-end]">
           <button
             id="dropdown-scrollable"
@@ -214,7 +214,7 @@ export default function Header() {
             </li>
           </ul>
         </div>
-      </div>
+      </div> */}
     </nav>
   );
 }

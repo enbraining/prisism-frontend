@@ -1,8 +1,8 @@
 "use client";
 
-import axios from "axios";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AxiosInstance } from "./util/axios";
 
 export default function Home() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -10,7 +10,7 @@ export default function Home() {
 
   useEffect(() => {
     const fetchRooms = async () => {
-      setRooms((await axios.get("http://localhost:3001/room")).data);
+      setRooms((await AxiosInstance.get("/room")).data);
     };
     fetchRooms();
   }, [rooms]);
@@ -19,7 +19,10 @@ export default function Home() {
     <div className="grid">
       <div className="pt-20 min-h-screen mx-auto sm:w-1/2 w-[90%]">
         <div className="space-x-3 mb-6">
-          <Link href={"/create"} className="btn btn-primary waves waves-light">
+          <Link
+            href={"/room/create"}
+            className="btn btn-primary waves waves-light"
+          >
             방 만들기
           </Link>
           <Link

@@ -1,6 +1,6 @@
 "use client";
 
-import { redirect, useParams } from "next/navigation";
+import { redirect } from "next/navigation";
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 
@@ -11,7 +11,6 @@ export interface MessageRequest {
 }
 
 export default function Page() {
-  const params = useParams();
   const messageRef = useRef<HTMLDivElement>();
 
   const [connected, setConnected] = useState(false);
@@ -19,6 +18,7 @@ export default function Page() {
   const [socket, setSocket] = useState<any>(null);
   const [chats, setChats] = useState<MessageRequest[]>([]);
   const [message, setMessage] = useState<string>("");
+  const [roomId, setRoomId] = useState<string | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleChange = useCallback((e: ChangeEvent | any) => {
@@ -57,12 +57,17 @@ export default function Page() {
   );
 
   useEffect(() => {
-    const roomId = params.id;
-    console.log(params.id);
     const newSocket = io("http://localhost:3030/chat", {
       transports: ["websocket"],
       path: "/socket.io/",
     });
+
+    const handleMessage = (data: MessageRequest) => {
+      if (data.client !== newSocket.id) {
+        setChats((prev) => [...prev, data]);
+        messageRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    };
 
     setSocket(newSocket);
 
@@ -70,9 +75,13 @@ export default function Page() {
       console.log("connected", newSocket.id);
       setConnected(true);
 
-      if (roomId) {
-        newSocket.emit("join", { roomId });
-      }
+      newSocket.emit("random-join");
+    });
+
+    newSocket.on("get-room", (data) => {
+      console.log(data.roomId);
+      setRoomId(data.roomId);
+      newSocket.on(`sub-message-${data.roomId}`, handleMessage);
     });
 
     newSocket.on("error", (error) => {
@@ -80,20 +89,16 @@ export default function Page() {
       redirect("/");
     });
 
-    newSocket.on(`sub-message-${roomId}`, (data: MessageRequest) => {
-      if (data.client != newSocket.id) setChats((prev) => [...prev, data]);
-      messageRef.current?.scrollIntoView({ behavior: "smooth" });
-    });
-
     return () => {
       if (newSocket) {
         newSocket.off("connect");
         newSocket.off("error");
         newSocket.off(`sub-message-${roomId}`);
+        newSocket.off(`get-room`);
         newSocket.disconnect();
       }
     };
-  }, [params.id]);
+  }, []);
 
   // 연결 상태 디버깅을 위한 로그
   useEffect(() => {
@@ -102,6 +107,7 @@ export default function Page() {
 
   return (
     <main className="grid">
+      <h1>{roomId}</h1>
       <div className="bg-base-200 mx-auto sm:w-1/2 w-[90%] overflow-y-auto h-[75vh] my-5 rounded-2xl p-5">
         {chats.map((chat, index) => (
           <div
