@@ -2,7 +2,7 @@
 
 import { redirect, useParams } from "next/navigation";
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 
 export interface MessageRequest {
   id: number;
@@ -13,10 +13,8 @@ export interface MessageRequest {
 export default function Page() {
   const params = useParams();
   const messageRef = useRef<HTMLDivElement>();
+  const socketRef = useRef<Socket | null>(null);
 
-  const [connected, setConnected] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [socket, setSocket] = useState<any>(null);
   const [chats, setChats] = useState<MessageRequest[]>([]);
   const [message, setMessage] = useState<string>("");
 
@@ -27,49 +25,47 @@ export default function Page() {
   }, []);
 
   const onQuit = useCallback(() => {
-    socket.disconnect();
+    socketRef.current?.disconnect();
     redirect("/");
-  }, [socket]);
+  }, [socketRef]);
 
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-        if (!message.trim() || !socket) return;
+        if (!message.trim() || !socketRef.current) return;
 
-        socket.emit("pub-message", {
+        socketRef.current.emit("pub-message", {
           message: message.trim(),
         });
-        setChats([
-          ...chats,
+
+        setChats((prev) => [
+          ...prev,
           {
             id: 1,
             message: message.trim(),
-            client: socket.id,
+            client: socketRef.current?.id ?? "",
           },
         ]);
+
         setMessage("");
         e.preventDefault();
 
         messageRef.current?.scrollIntoView({ behavior: "smooth" });
       }
     },
-    [chats, message, socket]
+    [chats, message, socketRef]
   );
 
   useEffect(() => {
     const roomId = params.id;
-    console.log(params.id);
     const newSocket = io("http://localhost:3030/chat", {
       transports: ["websocket"],
       path: "/socket.io/",
     });
 
-    setSocket(newSocket);
+    socketRef.current = newSocket;
 
     newSocket.on("connect", () => {
-      console.log("connected", newSocket.id);
-      setConnected(true);
-
       if (roomId) {
         newSocket.emit("join", { roomId });
       }
@@ -95,43 +91,38 @@ export default function Page() {
     };
   }, [params.id]);
 
-  // 연결 상태 디버깅을 위한 로그
-  useEffect(() => {
-    console.log("Connection status:", connected);
-  }, [connected]);
-
   return (
     <main className="grid">
-      <div className="bg-base-200 mx-auto sm:w-1/2 w-[90%] overflow-y-auto h-[75vh] my-5 rounded-2xl p-5">
+      <div className="bg-base-200 mx-auto sm:w-1/2 w-[90%] overflow-y-auto h-[75vh] my-5 rounded-lg p-5">
         {chats.map((chat, index) => (
           <div
             key={index}
             className={`chat ${
-              chat.client == socket.id
+              chat.client == socketRef.current?.id
                 ? "chat-sender ml-auto"
                 : "chat-receiver mr-auto"
             }`}
           >
             <div className="chat-header text-base-content/90">
               {chat.client}
-              <time className="text-base-content/50">12:46</time>
             </div>
             <div className="chat-bubble">{chat.message}</div>
           </div>
         ))}
         <div ref={messageRef as React.RefObject<HTMLDivElement>} />
       </div>
-      <div className="mx-auto flex w-[90%] sm:w-1/2 gap-x-1">
+
+      <div className="mx-auto flex w-[90%] sm:w-1/2 gap-x-2">
         <input
           value={message}
           onKeyDown={handleKeyPress}
           onChange={handleChange}
           type="text"
-          placeholder="Type here"
+          placeholder="채팅을 입력해주세요."
           className="input"
         />
         <button className="btn btn-outline btn-primary" onClick={onQuit}>
-          Q
+          나가기
         </button>
       </div>
     </main>

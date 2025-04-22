@@ -26,7 +26,7 @@ export default function Home() {
             방 만들기
           </Link>
           <Link
-            href={"/random"}
+            href={"/room/random"}
             className="btn btn-soft btn-primary waves waves-primary"
           >
             랜덤한 채팅
