@@ -6,6 +6,7 @@ import { io } from "socket.io-client";
 import { Socket } from "socket.io-client";
 
 import levelUpAudio from "../../sounds/levelUpAudio.wav";
+import { toast } from "react-toastify";
 
 export interface MessageRequest {
   id: number;
@@ -107,6 +108,11 @@ export default function Page() {
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter" && !e.nativeEvent.isComposing) {
         if (!message.trim() || !socketRef.current) return;
+
+        if (message.length > 80) {
+          toast.warning("80자를 초과해서 전송할 수 없습니다.");
+          return;
+        }
 
         socketRef.current?.emit("pub-message", {
           message: message.trim(),

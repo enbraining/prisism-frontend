@@ -36,7 +36,7 @@ export default function Page() {
         if (!message.trim() || !socketRef.current) return;
 
         if (message.length > 80) {
-          toast.warning("80자 이상 작성할 수 없습니다.");
+          toast.warning("80자를 초과해서 전송할 수 없습니다.");
           return;
         }
 
