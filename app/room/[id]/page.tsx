@@ -37,6 +37,7 @@ export default function Page() {
 
         if (message.length > 80) {
           toast.warning("80자를 초과해서 전송할 수 없습니다.");
+          setMessage("");
           return;
         }
 
