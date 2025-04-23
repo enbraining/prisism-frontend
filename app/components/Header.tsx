@@ -7,7 +7,7 @@ import useSWR from "swr";
 export default function Header() {
   const fetcher = (url: string) => axios.get(url).then((res) => res.data);
   const { data } = useSWR<{ count: number }>(
-    "http://183.105.197.228:3001/room/count",
+    "https://prisism.bricn.net/room/count",
     fetcher
   );
 

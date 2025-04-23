@@ -72,7 +72,7 @@ export default function Page() {
   );
 
   useEffect(() => {
-    const newSocket = io("http://183.105.197.228:3030/chat", {
+    const newSocket = io("https://prisism.bricn.net/chat", {
       transports: ["websocket"],
       path: "/socket.io/",
     });
