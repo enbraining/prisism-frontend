@@ -2,6 +2,7 @@
 
 import { redirect, useParams } from "next/navigation";
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import { io, Socket } from "socket.io-client";
 
 export interface MessageRequest {
@@ -33,6 +34,11 @@ export default function Page() {
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter" && !e.nativeEvent.isComposing) {
         if (!message.trim() || !socketRef.current) return;
+
+        if (message.length > 100) {
+          toast.warning("100글자 이상 작성할 수 없습니다.");
+          return;
+        }
 
         socketRef.current.emit("pub-message", {
           message: message.trim(),

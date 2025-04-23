@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Header from "./components/Header";
 import "./globals.css";
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
 
 const pretendard = localFont({
   src: "./fonts/PretendardVariable.woff2",
@@ -23,6 +25,7 @@ export default function RootLayout({
         className={`${pretendard.className} ${pretendard.style} max-h-screen`}
       >
         <Header />
+        <ToastContainer autoClose={2000} />
         {children}
       </body>
     </html>
