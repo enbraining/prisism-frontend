@@ -14,8 +14,6 @@ export interface MessageRequest {
 }
 
 export default function Page() {
-  const alertAudio = new Audio(levelUpAudio);
-
   const messageRef = useRef<HTMLDivElement>();
   const socketRef = useRef<Socket | null>(null);
 
@@ -26,9 +24,14 @@ export default function Page() {
       message: "매칭을 대기중입니다.",
     },
   ]);
+  const [audio, setAudio] = useState<HTMLAudioElement>();
   const [message, setMessage] = useState<string>("");
   const [roomId, setRoomId] = useState<string | null>(null);
   const [status, setStatus] = useState<"JOIN" | "END" | null>(null);
+
+  useEffect(() => {
+    setAudio(new Audio(levelUpAudio));
+  }, []);
 
   const handleChange = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,7 +64,7 @@ export default function Page() {
 
     const handleMessage = (data: MessageRequest) => {
       if (data.client == "JOIN") {
-        alertAudio.play();
+        audio?.play();
         setStatus("JOIN");
       } else if (data.client == "END") setStatus("END");
 
@@ -141,7 +144,7 @@ export default function Page() {
 
     const handleMessage = (data: MessageRequest) => {
       if (data.client == "JOIN") {
-        alertAudio.play();
+        audio?.play();
         setStatus("JOIN");
       } else if (data.client == "END") setStatus("END");
 
