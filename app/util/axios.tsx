@@ -1,5 +1,5 @@
 import axios from "axios";
 
 export const AxiosInstance = axios.create({
-  baseURL: "http://localhost:3001",
+  baseURL: "http://183.105.197.228:3001",
 });
