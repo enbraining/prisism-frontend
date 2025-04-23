@@ -4,6 +4,11 @@ import { redirect } from "next/navigation";
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { Socket } from "socket.io-client";
+import {
+  decryptWithPrivateKey,
+  encryptWithPublicKey,
+  generateKeyPair,
+} from "@/app/util/crypto";
 
 import levelUpAudio from "../../sounds/levelUpAudio.wav";
 import { toast } from "react-toastify";
@@ -30,13 +35,34 @@ export default function Page() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [status, setStatus] = useState<"JOIN" | "END" | null>(null);
 
-  const handleMessage = (data: MessageRequest) => {
+  const savePublicKey = useCallback((data: any) => {
+    if (data.client != socketRef.current?.id) {
+      console.log(data.message);
+      localStorage.setItem("other-public-key", data.message);
+    }
+  }, []);
+
+  const onQuit = useCallback(() => {
+    socketRef.current?.disconnect();
+    redirect("/");
+  }, [socketRef]);
+
+  const handleMessage = useCallback(async (data: MessageRequest) => {
     if (data.client == "JOIN") {
       audio?.play();
       setStatus("JOIN");
     } else if (data.client == "END") setStatus("END");
 
     if (data.client !== socketRef.current?.id) {
+      const privateKey = localStorage.getItem("my-private-key") as string;
+      const decodedMessage = decryptWithPrivateKey(privateKey, data.message);
+      if (
+        decodedMessage != false &&
+        data.client != "JOIN" &&
+        data.client != "END"
+      ) {
+        data["message"] = decodedMessage;
+      }
       setChats((prev) => [...prev, data]);
     }
     messageRef.current?.scrollIntoView({
@@ -44,7 +70,7 @@ export default function Page() {
       block: "end",
       inline: "end",
     });
-  };
+  }, []);
 
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -57,8 +83,10 @@ export default function Page() {
           return;
         }
 
+        const publicKey = localStorage.getItem("other-public-key") as string;
+
         socketRef.current?.emit("pub-message", {
-          message: message.trim(),
+          message: encryptWithPublicKey(publicKey, message).toString(),
         });
 
         if (socketRef.current) {
@@ -84,6 +112,7 @@ export default function Page() {
     [chats, message, socketRef]
   );
 
+  // 채팅이 종료되지 않은 경우에만 입력할 수 있게
   const handleChange = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (e: ChangeEvent | any) => {
@@ -93,51 +122,6 @@ export default function Page() {
     [status]
   );
 
-  const onQuit = useCallback(() => {
-    socketRef.current?.disconnect();
-    redirect("/");
-  }, [socketRef]);
-
-  const onRestart = useCallback(() => {
-    setChats([
-      {
-        client: "JOIN",
-        id: 0,
-        message: "매칭을 대기중입니다.",
-      },
-    ]);
-
-    const newSocket = io(`${process.env.NEXT_PUBLIC_SOCKET_URL}/chat`, {
-      transports: ["websocket"],
-      path: "/socket.io/",
-    });
-    socketRef.current = newSocket;
-
-    socketRef.current.on("connect", () => {
-      socketRef.current?.emit("random-join");
-    });
-
-    socketRef.current.on("get-room", (data) => {
-      setRoomId(data.roomId);
-      socketRef.current?.on(`sub-message-${data.roomId}`, handleMessage);
-    });
-
-    socketRef.current.on("error", (error) => {
-      alert(error.message);
-      redirect("/");
-    });
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.off("connect");
-        socketRef.current.off("error");
-        socketRef.current.off(`sub-message-${roomId}`);
-        socketRef.current.off(`get-room`);
-        socketRef.current.disconnect();
-      }
-    };
-  }, [socketRef]);
-
   useEffect(() => {
     const newSocket = io(`${process.env.NEXT_PUBLIC_SOCKET_URL}/chat`, {
       transports: ["websocket"],
@@ -145,12 +129,18 @@ export default function Page() {
     });
     socketRef.current = newSocket;
 
-    socketRef.current.on("connect", () => {
-      socketRef.current?.emit("random-join");
+    socketRef.current.on("connect", async () => {
+      const keyPair = await generateKeyPair();
+      localStorage.setItem("my-private-key", keyPair.privateKey);
+      socketRef.current?.emit("random-join", {
+        publicKey: keyPair.publicKey,
+      });
     });
 
     socketRef.current.on("get-room", (data) => {
       setRoomId(data.roomId);
+      console.log(data.roomId);
+      socketRef.current?.on(`sub-e2ee-${data.roomId}`, savePublicKey);
       socketRef.current?.on(`sub-message-${data.roomId}`, handleMessage);
     });
 
@@ -164,6 +154,7 @@ export default function Page() {
         socketRef.current.off("connect");
         socketRef.current.off("error");
         socketRef.current.off(`sub-message-${roomId}`);
+        socketRef.current.off(`sub-e2ee-${roomId}`);
         socketRef.current.off(`get-room`);
         socketRef.current.disconnect();
       }
@@ -185,7 +176,7 @@ export default function Page() {
           ) : (
             <div
               key={index}
-              className={`w-fit mb-2 rounded-md px-4 py-3 ${
+              className={`w-fit mb-2 rounded-md px-4 py-3 break-words whitespace-pre-wrap ${
                 chat.client == socketRef.current?.id
                   ? "ml-auto bg-[#7422c1]"
                   : "mr-auto bg-[#2f2a34]"
@@ -195,6 +186,7 @@ export default function Page() {
             </div>
           )
         )}
+
         <div
           className="h-15"
           ref={messageRef as React.RefObject<HTMLDivElement>}
@@ -211,15 +203,10 @@ export default function Page() {
             placeholder="채팅을 입력해주세요."
             className="input"
           />
-          {status == "END" ? (
-            <button className="btn btn-primary" onClick={onRestart}>
-              재시작
-            </button>
-          ) : (
-            <button className="btn btn-primary" onClick={onQuit}>
-              나가기
-            </button>
-          )}
+
+          <button className="btn btn-primary" onClick={onQuit}>
+            나가기
+          </button>
         </div>
       </div>
     </main>
