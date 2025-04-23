@@ -35,8 +35,8 @@ export default function Page() {
       if (e.key === "Enter" && !e.nativeEvent.isComposing) {
         if (!message.trim() || !socketRef.current) return;
 
-        if (message.length > 100) {
-          toast.warning("100글자 이상 작성할 수 없습니다.");
+        if (message.length > 80) {
+          toast.warning("80자 이상 작성할 수 없습니다.");
           return;
         }
 
