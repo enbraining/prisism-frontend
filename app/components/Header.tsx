@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import Link from "next/link";
 import useSWR from "swr";
 import { AxiosInstance } from "../util/axios";

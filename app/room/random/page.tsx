@@ -10,7 +10,6 @@ import {
   generateKeyPair,
 } from "@/app/util/crypto";
 
-import levelUpAudio from "../../sounds/levelUpAudio.wav";
 import { toast } from "react-toastify";
 
 export interface MessageRequest {
@@ -30,11 +29,11 @@ export default function Page() {
       message: "매칭을 대기중입니다.",
     },
   ]);
-  const [audio, setAudio] = useState<HTMLAudioElement>();
   const [message, setMessage] = useState<string>("");
   const [roomId, setRoomId] = useState<string | null>(null);
   const [status, setStatus] = useState<"JOIN" | "END" | null>(null);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const savePublicKey = useCallback((data: any) => {
     if (data.client != socketRef.current?.id) {
       console.log(data.message);
@@ -48,10 +47,8 @@ export default function Page() {
   }, [socketRef]);
 
   const handleMessage = useCallback(async (data: MessageRequest) => {
-    if (data.client == "JOIN") {
-      audio?.play();
-      setStatus("JOIN");
-    } else if (data.client == "END") setStatus("END");
+    if (data.client == "JOIN") setStatus("JOIN");
+    else if (data.client == "END") setStatus("END");
 
     if (data.client !== socketRef.current?.id) {
       const privateKey = localStorage.getItem("my-private-key") as string;
@@ -109,7 +106,7 @@ export default function Page() {
         inline: "end",
       });
     },
-    [chats, message, socketRef]
+    [message, socketRef]
   );
 
   // 채팅이 종료되지 않은 경우에만 입력할 수 있게
@@ -139,7 +136,6 @@ export default function Page() {
 
     socketRef.current.on("get-room", (data) => {
       setRoomId(data.roomId);
-      console.log(data.roomId);
       socketRef.current?.on(`sub-e2ee-${data.roomId}`, savePublicKey);
       socketRef.current?.on(`sub-message-${data.roomId}`, handleMessage);
     });
@@ -159,10 +155,6 @@ export default function Page() {
         socketRef.current.disconnect();
       }
     };
-  }, []);
-
-  useEffect(() => {
-    setAudio(new Audio(levelUpAudio));
   }, []);
 
   return (

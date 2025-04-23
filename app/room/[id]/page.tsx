@@ -60,7 +60,7 @@ export default function Page() {
         messageRef.current?.scrollIntoView({ behavior: "smooth" });
       }
     },
-    [chats, message, socketRef]
+    [message, socketRef]
   );
 
   useEffect(() => {
