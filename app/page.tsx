@@ -14,7 +14,7 @@ export default function Home() {
   return (
     <div className="grid">
       <div className="pt-20 min-h-screen mx-auto sm:w-1/2 w-[90%]">
-        <div className="space-x-3 mb-6">
+        <div className="space-x-3 mb-6 flex items-center">
           <Link
             href={"/room/create"}
             className="btn btn-primary waves waves-light"
@@ -27,6 +27,9 @@ export default function Home() {
           >
             랜덤한 채팅
           </Link>
+          <div className="pl-4 text-neutral-600">
+            <p>랜덤채팅은 종단간 암호화가 적용됩니다.</p>
+          </div>
         </div>
         <ul>
           <div className="space-y-3 text-sm">
