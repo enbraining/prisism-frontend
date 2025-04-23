@@ -94,21 +94,27 @@ export default function Page() {
   return (
     <main>
       <div className="bg-base-200 mx-auto sm:w-1/2 w-full overflow-y-auto p-5 pt-15 h-[100vh]">
-        {chats.map((chat, index) => (
-          <div
-            key={index}
-            className={`chat ${
-              chat.client == socketRef.current?.id
-                ? "chat-sender ml-auto"
-                : "chat-receiver mr-auto"
-            }`}
-          >
-            <div className="chat-header text-base-content/90">
-              {chat.client}
+        {chats.map((chat, index) =>
+          chat.client == "JOIN" || chat.client == "END" ? (
+            <div className="w-full flex my-3 text-neutral-500" key={index}>
+              <p className="mx-auto">{chat.message}</p>
             </div>
-            <div className="chat-bubble">{chat.message}</div>
-          </div>
-        ))}
+          ) : (
+            <div
+              key={index}
+              className={`chat ${
+                chat.client == socketRef.current?.id
+                  ? "chat-sender ml-auto"
+                  : "chat-receiver mr-auto"
+              }`}
+            >
+              <div className="chat-header text-base-content/90">
+                {chat.client}
+              </div>
+              <div className="chat-bubble">{chat.message}</div>
+            </div>
+          )
+        )}
         <div
           className="h-15"
           ref={messageRef as React.RefObject<HTMLDivElement>}
