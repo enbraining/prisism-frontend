@@ -1,4 +1,4 @@
-import { JSEncrypt } from "JsEncrypt";
+import { JSEncrypt } from "jsencrypt";
 
 export const encryptWithPublicKey = (
   publicKey: string,
