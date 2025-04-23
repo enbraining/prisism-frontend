@@ -3,10 +3,12 @@
 import Link from "next/link";
 import axios from "axios";
 import useSWR from "swr";
+import { AxiosInstance } from "./util/axios";
 
 export default function Home() {
-  const fetcher = (url: string) => axios.get(url).then((res) => res.data);
-  const { data } = useSWR("https://prisism.bricn.net/room", fetcher, {
+  const fetcher = (url: string) =>
+    AxiosInstance.get(url).then((res) => res.data);
+  const { data } = useSWR("/room", fetcher, {
     refreshInterval: 5000,
   });
 

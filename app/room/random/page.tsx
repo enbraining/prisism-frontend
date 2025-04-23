@@ -30,79 +30,21 @@ export default function Page() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [status, setStatus] = useState<"JOIN" | "END" | null>(null);
 
-  useEffect(() => {
-    setAudio(new Audio(levelUpAudio));
-  }, []);
+  const handleMessage = (data: MessageRequest) => {
+    if (data.client == "JOIN") {
+      audio?.play();
+      setStatus("JOIN");
+    } else if (data.client == "END") setStatus("END");
 
-  const handleChange = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (e: ChangeEvent | any) => {
-      e.preventDefault();
-      if (status == "JOIN") setMessage(e.target.value);
-    },
-    [status]
-  );
-
-  const onQuit = useCallback(() => {
-    socketRef.current?.disconnect();
-    redirect("/");
-  }, [socketRef]);
-
-  const onRestart = useCallback(() => {
-    setChats([
-      {
-        client: "JOIN",
-        id: 0,
-        message: "매칭을 대기중입니다.",
-      },
-    ]);
-
-    const newSocket = io("https://prisism.bricn.net/chat", {
-      transports: ["websocket"],
-      path: "/socket.io/",
+    if (data.client !== socketRef.current?.id) {
+      setChats((prev) => [...prev, data]);
+    }
+    messageRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+      inline: "end",
     });
-    socketRef.current = newSocket;
-
-    const handleMessage = (data: MessageRequest) => {
-      if (data.client == "JOIN") {
-        audio?.play();
-        setStatus("JOIN");
-      } else if (data.client == "END") setStatus("END");
-
-      if (data.client !== socketRef.current?.id) {
-        setChats((prev) => [...prev, data]);
-      }
-      messageRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
-        inline: "end",
-      });
-    };
-
-    socketRef.current.on("connect", () => {
-      socketRef.current?.emit("random-join");
-    });
-
-    socketRef.current.on("get-room", (data) => {
-      setRoomId(data.roomId);
-      socketRef.current?.on(`sub-message-${data.roomId}`, handleMessage);
-    });
-
-    socketRef.current.on("error", (error) => {
-      alert(error.message);
-      redirect("/");
-    });
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.off("connect");
-        socketRef.current.off("error");
-        socketRef.current.off(`sub-message-${roomId}`);
-        socketRef.current.off(`get-room`);
-        socketRef.current.disconnect();
-      }
-    };
-  }, [socketRef]);
+  };
 
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -111,6 +53,7 @@ export default function Page() {
 
         if (message.length > 80) {
           toast.warning("80자를 초과해서 전송할 수 없습니다.");
+          setMessage("");
           return;
         }
 
@@ -141,28 +84,34 @@ export default function Page() {
     [chats, message, socketRef]
   );
 
-  useEffect(() => {
-    const newSocket = io("https://prisism.bricn.net/chat", {
+  const handleChange = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (e: ChangeEvent | any) => {
+      e.preventDefault();
+      if (status == "JOIN") setMessage(e.target.value);
+    },
+    [status]
+  );
+
+  const onQuit = useCallback(() => {
+    socketRef.current?.disconnect();
+    redirect("/");
+  }, [socketRef]);
+
+  const onRestart = useCallback(() => {
+    setChats([
+      {
+        client: "JOIN",
+        id: 0,
+        message: "매칭을 대기중입니다.",
+      },
+    ]);
+
+    const newSocket = io(`${process.env.NEXT_PUBLIC_SOCKET_URL}/chat`, {
       transports: ["websocket"],
       path: "/socket.io/",
     });
     socketRef.current = newSocket;
-
-    const handleMessage = (data: MessageRequest) => {
-      if (data.client == "JOIN") {
-        audio?.play();
-        setStatus("JOIN");
-      } else if (data.client == "END") setStatus("END");
-
-      if (data.client !== socketRef.current?.id) {
-        setChats((prev) => [...prev, data]);
-      }
-      messageRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
-        inline: "end",
-      });
-    };
 
     socketRef.current.on("connect", () => {
       socketRef.current?.emit("random-join");
@@ -187,6 +136,42 @@ export default function Page() {
         socketRef.current.disconnect();
       }
     };
+  }, [socketRef]);
+
+  useEffect(() => {
+    const newSocket = io(`${process.env.NEXT_PUBLIC_SOCKET_URL}/chat`, {
+      transports: ["websocket"],
+      path: "/socket.io/",
+    });
+    socketRef.current = newSocket;
+
+    socketRef.current.on("connect", () => {
+      socketRef.current?.emit("random-join");
+    });
+
+    socketRef.current.on("get-room", (data) => {
+      setRoomId(data.roomId);
+      socketRef.current?.on(`sub-message-${data.roomId}`, handleMessage);
+    });
+
+    socketRef.current.on("error", (error) => {
+      alert(error.message);
+      redirect("/");
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off("connect");
+        socketRef.current.off("error");
+        socketRef.current.off(`sub-message-${roomId}`);
+        socketRef.current.off(`get-room`);
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    setAudio(new Audio(levelUpAudio));
   }, []);
 
   return (

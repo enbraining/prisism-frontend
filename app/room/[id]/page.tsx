@@ -65,7 +65,7 @@ export default function Page() {
 
   useEffect(() => {
     const roomId = params.id;
-    const newSocket = io("https://prisism.bricn.net/chat", {
+    const newSocket = io(`${process.env.NEXT_PUBLIC_SOCKET_URL}/chat`, {
       transports: ["websocket"],
       path: "/socket.io/",
     });

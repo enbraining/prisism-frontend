@@ -3,16 +3,14 @@
 import axios from "axios";
 import Link from "next/link";
 import useSWR from "swr";
+import { AxiosInstance } from "../util/axios";
 
 export default function Header() {
-  const fetcher = (url: string) => axios.get(url).then((res) => res.data);
-  const { data } = useSWR<{ count: number }>(
-    "https://prisism.bricn.net/room/count",
-    fetcher,
-    {
-      refreshInterval: 5000,
-    }
-  );
+  const fetcher = (url: string) =>
+    AxiosInstance.get(url).then((res) => res.data);
+  const { data } = useSWR<{ count: number }>("/room/count", fetcher, {
+    refreshInterval: 5000,
+  });
 
   return (
     <div className="w-full fixed z-10">
