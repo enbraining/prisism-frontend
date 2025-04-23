@@ -5,6 +5,8 @@ import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { Socket } from "socket.io-client";
 
+import levelUpAudio from "../../sounds/levelUpAudio.wav";
+
 export interface MessageRequest {
   id: number;
   message: string;
@@ -12,8 +14,11 @@ export interface MessageRequest {
 }
 
 export default function Page() {
+  const alertAudio = new Audio(levelUpAudio);
+
   const messageRef = useRef<HTMLDivElement>();
   const socketRef = useRef<Socket | null>(null);
+
   const [chats, setChats] = useState<MessageRequest[]>([
     {
       client: "JOIN",
@@ -37,6 +42,62 @@ export default function Page() {
   const onQuit = useCallback(() => {
     socketRef.current?.disconnect();
     redirect("/");
+  }, [socketRef]);
+
+  const onRestart = useCallback(() => {
+    setChats([
+      {
+        client: "JOIN",
+        id: 0,
+        message: "매칭을 대기중입니다.",
+      },
+    ]);
+
+    const newSocket = io("https://prisism.bricn.net/chat", {
+      transports: ["websocket"],
+      path: "/socket.io/",
+    });
+    socketRef.current = newSocket;
+
+    const handleMessage = (data: MessageRequest) => {
+      if (data.client == "JOIN") {
+        alertAudio.play();
+        setStatus("JOIN");
+      } else if (data.client == "END") setStatus("END");
+
+      if (data.client !== socketRef.current?.id) {
+        setChats((prev) => [...prev, data]);
+      }
+      messageRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+        inline: "end",
+      });
+    };
+
+    socketRef.current.on("connect", () => {
+      socketRef.current?.emit("random-join");
+    });
+
+    socketRef.current.on("get-room", (data) => {
+      setRoomId(data.roomId);
+      socketRef.current?.on(`sub-message-${data.roomId}`, handleMessage);
+    });
+
+    socketRef.current.on("error", (error) => {
+      alert(error.message);
+      redirect("/");
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off("connect");
+        socketRef.current.off("error");
+        socketRef.current.off(`sub-message-${roomId}`);
+        socketRef.current.off(`get-room`);
+        socketRef.current.disconnect();
+      }
+    };
   }, [socketRef]);
 
   const handleKeyPress = useCallback(
@@ -79,8 +140,10 @@ export default function Page() {
     socketRef.current = newSocket;
 
     const handleMessage = (data: MessageRequest) => {
-      if (data.client == "JOIN") setStatus("JOIN");
-      else if (data.client == "END") setStatus("END");
+      if (data.client == "JOIN") {
+        alertAudio.play();
+        setStatus("JOIN");
+      } else if (data.client == "END") setStatus("END");
 
       if (data.client !== socketRef.current?.id) {
         setChats((prev) => [...prev, data]);
@@ -154,9 +217,15 @@ export default function Page() {
             placeholder="채팅을 입력해주세요."
             className="input"
           />
-          <button className="btn btn-primary" onClick={onQuit}>
-            나가기
-          </button>
+          {status == "END" ? (
+            <button className="btn btn-primary" onClick={onRestart}>
+              재시작
+            </button>
+          ) : (
+            <button className="btn btn-primary" onClick={onQuit}>
+              나가기
+            </button>
+          )}
         </div>
       </div>
     </main>
