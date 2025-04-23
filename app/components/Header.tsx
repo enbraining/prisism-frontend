@@ -8,7 +8,10 @@ export default function Header() {
   const fetcher = (url: string) => axios.get(url).then((res) => res.data);
   const { data } = useSWR<{ count: number }>(
     "https://prisism.bricn.net/room/count",
-    fetcher
+    fetcher,
+    {
+      refreshInterval: 5000,
+    }
   );
 
   return (

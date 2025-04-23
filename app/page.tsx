@@ -1,19 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { AxiosInstance } from "./util/axios";
+import axios from "axios";
+import useSWR from "swr";
 
 export default function Home() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [rooms, setRooms] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchRooms = async () => {
-      setRooms((await AxiosInstance.get("/room")).data);
-    };
-    fetchRooms();
-  }, []);
+  const fetcher = (url: string) => axios.get(url).then((res) => res.data);
+  const { data } = useSWR("https://prisism.bricn.net/room", fetcher, {
+    refreshInterval: 5000,
+  });
 
   return (
     <div className="grid">
@@ -36,7 +31,7 @@ export default function Home() {
           <div className="space-y-3 text-sm">
             {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              rooms.map((room: any) => (
+              data?.map((room: any) => (
                 <Link
                   href={`/room/${room.id}`}
                   key={room.id}
