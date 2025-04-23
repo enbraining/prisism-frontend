@@ -13,7 +13,7 @@ export default function Home() {
       setRooms((await AxiosInstance.get("/room")).data);
     };
     fetchRooms();
-  }, [rooms]);
+  }, []);
 
   return (
     <div className="grid">
