@@ -12,7 +12,7 @@ export default function Header() {
   );
 
   return (
-    <div className="w-full fixed">
+    <div className="w-full fixed z-10">
       <nav className="navbar bg-base-700 mx-auto sm:w-1/2 shadow-md rounded-b-xl">
         <Link
           className="link text-base-content link-neutral text-lg font-semibold no-underline"
