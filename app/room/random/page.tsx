@@ -14,15 +14,25 @@ export interface MessageRequest {
 export default function Page() {
   const messageRef = useRef<HTMLDivElement>();
   const socketRef = useRef<Socket | null>(null);
-  const [chats, setChats] = useState<MessageRequest[]>([]);
+  const [chats, setChats] = useState<MessageRequest[]>([
+    {
+      client: "JOIN",
+      id: 0,
+      message: "매칭을 대기중입니다.",
+    },
+  ]);
   const [message, setMessage] = useState<string>("");
   const [roomId, setRoomId] = useState<string | null>(null);
+  const [status, setStatus] = useState<"JOIN" | "END" | null>(null);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleChange = useCallback((e: ChangeEvent | any) => {
-    e.preventDefault();
-    setMessage(e.target.value);
-  }, []);
+  const handleChange = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (e: ChangeEvent | any) => {
+      e.preventDefault();
+      if (status == "JOIN") setMessage(e.target.value);
+    },
+    [status]
+  );
 
   const onQuit = useCallback(() => {
     socketRef.current?.disconnect();
@@ -51,9 +61,12 @@ export default function Page() {
 
         setMessage("");
         e.preventDefault();
-
-        messageRef.current?.scrollIntoView({ behavior: "smooth" });
       }
+      messageRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+        inline: "end",
+      });
     },
     [chats, message, socketRef]
   );
@@ -66,12 +79,17 @@ export default function Page() {
     socketRef.current = newSocket;
 
     const handleMessage = (data: MessageRequest) => {
-      console.log(socketRef.current?.id);
+      if (data.client == "JOIN") setStatus("JOIN");
+      else if (data.client == "END") setStatus("END");
 
       if (data.client !== socketRef.current?.id) {
         setChats((prev) => [...prev, data]);
-        messageRef.current?.scrollIntoView({ behavior: "smooth" });
       }
+      messageRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+        inline: "end",
+      });
     };
 
     socketRef.current.on("connect", () => {
@@ -100,48 +118,46 @@ export default function Page() {
   }, []);
 
   return (
-    <main className="grid">
-      <div className="bg-base-200 mx-auto sm:w-1/2 w-[90%] overflow-y-auto h-[75vh] my-5 rounded-lg p-5">
+    <main>
+      <div className="bg-base-200 mx-auto sm:w-1/2 w-full overflow-y-scroll p-5 pt-15 h-[100vh]">
         {chats.map((chat, index) =>
-          chat.client == "notice" ? (
+          chat.client == "JOIN" || chat.client == "END" ? (
             <div className="w-full flex my-3 text-neutral-500" key={index}>
               <p className="mx-auto">{chat.message}</p>
             </div>
           ) : (
             <div
               key={index}
-              className={`${
+              className={`w-fit mb-2 rounded-md px-4 py-3 ${
                 chat.client == socketRef.current?.id
-                  ? "chat-sender ml-auto chat"
-                  : "chat-receiver mr-auto chat"
+                  ? "ml-auto bg-[#7422c1]"
+                  : "mr-auto bg-[#2f2a34]"
               }`}
             >
-              <div
-                className={`chat-header text-base-content/90 ${
-                  chat.client == "notice" && "hidden"
-                }`}
-              >
-                {chat.client == socketRef.current?.id ? "나" : "상대방"}
-              </div>
-              <div className="chat-bubble">{chat.message}</div>
+              {chat.message}
             </div>
           )
         )}
-        <div ref={messageRef as React.RefObject<HTMLDivElement>} />
+        <div
+          className="h-15"
+          ref={messageRef as React.RefObject<HTMLDivElement>}
+        />
       </div>
 
-      <div className="mx-auto flex w-[90%] sm:w-1/2 gap-x-2">
-        <input
-          value={message}
-          onKeyDown={handleKeyPress}
-          onChange={handleChange}
-          type="text"
-          placeholder="채팅을 입력해주세요."
-          className="input"
-        />
-        <button className="btn btn-outline btn-primary" onClick={onQuit}>
-          나가기
-        </button>
+      <div className="fixed w-full bottom-0">
+        <div className="mx-auto flex gap-x-2 sm:w-1/2 p-2">
+          <input
+            value={message}
+            onKeyDown={handleKeyPress}
+            onChange={handleChange}
+            type="text"
+            placeholder="채팅을 입력해주세요."
+            className="input"
+          />
+          <button className="btn btn-primary" onClick={onQuit}>
+            나가기
+          </button>
+        </div>
       </div>
     </main>
   );

@@ -19,11 +19,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${pretendard.className} ${pretendard.style}`}>
-        <div className="min-h-screen">
-          <Header />
-          {children}
-        </div>
+      <body
+        className={`${pretendard.className} ${pretendard.style} max-h-screen`}
+      >
+        <Header />
+        {children}
       </body>
     </html>
   );

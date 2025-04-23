@@ -92,8 +92,8 @@ export default function Page() {
   }, [params.id]);
 
   return (
-    <main className="grid">
-      <div className="bg-base-200 mx-auto sm:w-1/2 w-[90%] overflow-y-auto h-[75vh] my-5 rounded-lg p-5">
+    <main>
+      <div className="bg-base-200 mx-auto sm:w-1/2 w-full overflow-y-auto p-5 pt-15 h-[100vh]">
         {chats.map((chat, index) => (
           <div
             key={index}
@@ -112,18 +112,20 @@ export default function Page() {
         <div ref={messageRef as React.RefObject<HTMLDivElement>} />
       </div>
 
-      <div className="mx-auto flex w-[90%] sm:w-1/2 gap-x-2">
-        <input
-          value={message}
-          onKeyDown={handleKeyPress}
-          onChange={handleChange}
-          type="text"
-          placeholder="채팅을 입력해주세요."
-          className="input"
-        />
-        <button className="btn btn-outline btn-primary" onClick={onQuit}>
-          나가기
-        </button>
+      <div className="fixed w-full bottom-0">
+        <div className="mx-auto flex gap-x-2 sm:w-1/2 p-2">
+          <input
+            value={message}
+            onKeyDown={handleKeyPress}
+            onChange={handleChange}
+            type="text"
+            placeholder="채팅을 입력해주세요."
+            className="input"
+          />
+          <button className="btn btn-primary" onClick={onQuit}>
+            나가기
+          </button>
+        </div>
       </div>
     </main>
   );
