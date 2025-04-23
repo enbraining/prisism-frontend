@@ -109,7 +109,10 @@ export default function Page() {
             <div className="chat-bubble">{chat.message}</div>
           </div>
         ))}
-        <div ref={messageRef as React.RefObject<HTMLDivElement>} />
+        <div
+          className="h-15"
+          ref={messageRef as React.RefObject<HTMLDivElement>}
+        />
       </div>
 
       <div className="fixed w-full bottom-0">
