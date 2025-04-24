@@ -45,7 +45,7 @@ export default function Home() {
                     <span className="group-hover:bg-slate-50 icon-[tabler--arrow-right] size-4 rtl:rotate-180"></span>
                   </span>
                   <span className="grid grid-flow-col w-full">
-                    <span className="text-base-content/80">{room.title}</span>
+                    <p className="text-base-content/80">{`${room.title} [${room.ip}]`}</p>
                     <span className="text-base-content/80 ml-auto">
                       {room.userCount}/{room.maxUser}
                     </span>
