@@ -11,6 +11,7 @@ import {
 } from "@/app/util/crypto";
 
 import { toast } from "react-toastify";
+import { kMaxLength } from "buffer";
 
 export interface MessageRequest {
   message: string;
@@ -48,9 +49,14 @@ export default function Page() {
     });
   }, []);
 
-  const sentPublicKey = useCallback((data: { publicKey: string }) => {
-    localStorage.setItem("other-public-key", data.publicKey);
-  }, []);
+  const sentPublicKey = useCallback(
+    (data: { publicKey: string; keyOwner: string }) => {
+      if (socketRef.current?.id != data.keyOwner) {
+        localStorage.setItem("other-public-key", data.publicKey);
+      }
+    },
+    []
+  );
 
   const onQuit = useCallback(() => {
     socketRef.current?.disconnect();
