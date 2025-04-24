@@ -10,10 +10,10 @@ export default function Page() {
 
   const onSubmit = useCallback((formDate: FormData) => {
     const createRoom = async () => {
-      const title = formDate.get("title");
-      const maxUser = formDate.get("count");
+      const title = formDate.get("title") as string | null;
+      const maxUser = formDate.get("count") as string | null;
 
-      if (!title) setWrong(true);
+      if (!title || title.length > 20) setWrong(true);
       else {
         await AxiosInstance.post("/room", {
           title,
