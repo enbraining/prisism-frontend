@@ -13,7 +13,6 @@ import {
 import { toast } from "react-toastify";
 
 export interface MessageRequest {
-  id: number;
   message: string;
   client: string;
 }
@@ -25,7 +24,6 @@ export default function Page() {
   const [chats, setChats] = useState<MessageRequest[]>([
     {
       client: "JOIN",
-      id: 0,
       message: "매칭을 대기중입니다.",
     },
   ]);
@@ -33,40 +31,57 @@ export default function Page() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [status, setStatus] = useState<"JOIN" | "END" | null>(null);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const savePublicKey = useCallback((data: any) => {
-    if (data.client != socketRef.current?.id) {
-      console.log(data.message);
-      localStorage.setItem("other-public-key", data.message);
-    }
-  }, []);
-
-  const onQuit = useCallback(() => {
-    socketRef.current?.disconnect();
-    redirect("/");
-  }, [socketRef]);
-
-  const handleMessage = useCallback(async (data: MessageRequest) => {
-    if (data.client == "JOIN") setStatus("JOIN");
-    else if (data.client == "END") setStatus("END");
-
-    if (data.client !== socketRef.current?.id) {
-      const privateKey = localStorage.getItem("my-private-key") as string;
-      const decodedMessage = decryptWithPrivateKey(privateKey, data.message);
-      if (
-        decodedMessage != false &&
-        data.client != "JOIN" &&
-        data.client != "END"
-      ) {
-        data["message"] = decodedMessage;
-      }
-      setChats((prev) => [...prev, data]);
-    }
+  const chatScrollDown = () => {
     messageRef.current?.scrollIntoView({
       behavior: "smooth",
       block: "end",
       inline: "end",
     });
+  };
+
+  const sendPublicKey = useCallback(async () => {
+    const keyPair = await generateKeyPair();
+    localStorage.setItem("my-private-key", keyPair.privateKey);
+
+    socketRef.current?.emit("send-e2ee", {
+      publicKey: keyPair.publicKey,
+    });
+  }, []);
+
+  const sentPublicKey = useCallback((data: { publicKey: string }) => {
+    localStorage.setItem("other-public-key", data.publicKey);
+  }, []);
+
+  const onQuit = useCallback(() => {
+    socketRef.current?.disconnect();
+
+    localStorage.removeItem("my-private-key");
+    localStorage.removeItem("other-public-key");
+
+    redirect("/");
+  }, [socketRef]);
+
+  const handleMessage = useCallback(async (data: MessageRequest) => {
+    if (data.client !== socketRef.current?.id) {
+      const privateKey = localStorage.getItem("my-private-key") as string;
+      const decodedMessage = decryptWithPrivateKey(privateKey, data.message);
+
+      if (decodedMessage != false) {
+        data["message"] = decodedMessage;
+      }
+
+      setChats((prev) => [...prev, data]);
+    }
+
+    chatScrollDown();
+  }, []);
+
+  const handleNotice = useCallback(async (data: MessageRequest) => {
+    if (data.client == "JOIN") setStatus("JOIN");
+    else if (data.client == "END") setStatus("END");
+
+    setChats((prev) => [...prev, data]);
+    chatScrollDown();
   }, []);
 
   const handleKeyPress = useCallback(
@@ -100,11 +115,8 @@ export default function Page() {
         setMessage("");
         e.preventDefault();
       }
-      messageRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
-        inline: "end",
-      });
+
+      chatScrollDown();
     },
     [message, socketRef]
   );
@@ -119,6 +131,10 @@ export default function Page() {
     [status]
   );
 
+  const onConnect = () => {
+    socketRef.current?.emit("random-join");
+  };
+
   useEffect(() => {
     const newSocket = io(`${process.env.NEXT_PUBLIC_SOCKET_URL}/chat`, {
       transports: ["websocket"],
@@ -126,18 +142,14 @@ export default function Page() {
     });
     socketRef.current = newSocket;
 
-    socketRef.current.on("connect", async () => {
-      const keyPair = await generateKeyPair();
-      localStorage.setItem("my-private-key", keyPair.privateKey);
-      socketRef.current?.emit("random-join", {
-        publicKey: keyPair.publicKey,
-      });
-    });
+    socketRef.current.on("connect", onConnect);
 
     socketRef.current.on("get-room", (data) => {
       setRoomId(data.roomId);
-      socketRef.current?.on(`sub-e2ee-${data.roomId}`, savePublicKey);
       socketRef.current?.on(`sub-message-${data.roomId}`, handleMessage);
+      socketRef.current?.on(`sub-notice-${data.roomId}`, handleNotice);
+      socketRef.current?.on(`start-e2ee-${data.roomId}`, sendPublicKey);
+      socketRef.current?.on(`sent-e2ee-${data.roomId}`, sentPublicKey);
     });
 
     socketRef.current.on("error", (error) => {
@@ -150,7 +162,9 @@ export default function Page() {
         socketRef.current.off("connect");
         socketRef.current.off("error");
         socketRef.current.off(`sub-message-${roomId}`);
-        socketRef.current.off(`sub-e2ee-${roomId}`);
+        socketRef.current.off(`sub-notice-${roomId}`);
+        socketRef.current.off(`start-e2ee-${roomId}`);
+        socketRef.current.off(`sent-e2ee-${roomId}`);
         socketRef.current.off(`get-room`);
         socketRef.current.disconnect();
       }
