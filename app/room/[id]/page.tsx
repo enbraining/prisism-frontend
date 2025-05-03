@@ -1,5 +1,6 @@
 "use client";
 
+import { AxiosInstance } from "@/app/util/axios";
 import { redirect, useParams } from "next/navigation";
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
@@ -9,6 +10,12 @@ export interface MessageRequest {
   id: number;
   message: string;
   client: string;
+}
+
+export interface HistoryResponse {
+  id: string;
+  content: string;
+  clientId: string;
 }
 
 export default function Page() {
@@ -63,8 +70,26 @@ export default function Page() {
     [message, socketRef]
   );
 
+  const loadHistory = useCallback((roomId: string) => {
+    const fetchHistory = async () => {
+      const response = await AxiosInstance.get(`/room/${roomId}/history`);
+      setChats(
+        response.data.map((history: HistoryResponse) => ({
+          id: 1,
+          message: history.content,
+          client: history.clientId,
+        }))
+      );
+    };
+
+    fetchHistory();
+  }, []);
+
   useEffect(() => {
     const roomId = params.id;
+
+    loadHistory(roomId as string);
+
     const newSocket = io(`${process.env.NEXT_PUBLIC_SOCKET_URL}/chat`, {
       transports: ["websocket"],
       path: "/socket.io/",
