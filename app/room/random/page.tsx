@@ -1,7 +1,14 @@
 "use client";
 
 import { redirect } from "next/navigation";
-import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { io } from "socket.io-client";
 import { Socket } from "socket.io-client";
 import {
@@ -131,7 +138,7 @@ export default function Page() {
   );
 
   const onClickSendButton = useCallback(
-    (event: MouseEvent) => {
+    (event: MouseEvent<HTMLButtonElement>) => {
       sendMessage();
       event.preventDefault();
       chatScrollDown();
