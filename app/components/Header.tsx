@@ -25,7 +25,7 @@ export default function Header() {
   }, [pathname]);
 
   return (
-    <div className="w-full fixed top-0">
+    <div className="w-full fixed top-0 z-10">
       <div className="mx-auto sm:w-1/2 bg-base-700">
         <nav className="bg-base-100 py-3 flex px-6 border-b border-base-300">
           <Link
