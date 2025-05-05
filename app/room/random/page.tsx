@@ -11,6 +11,7 @@ import {
 } from "@/app/util/crypto";
 
 import { toast } from "react-toastify";
+import { IconDoorExit } from "@tabler/icons-react";
 
 export interface MessageRequest {
   message: string;
@@ -89,41 +90,53 @@ export default function Page() {
     chatScrollDown();
   }, []);
 
+  const sendMessage = useCallback(() => {
+    if (!message.trim() || !socketRef.current) return;
+
+    if (message.length > 80) {
+      toast.warning("80자를 초과해서 전송할 수 없습니다.");
+      setMessage("");
+      return;
+    }
+
+    const publicKey = localStorage.getItem("other-public-key") as string;
+
+    socketRef.current?.emit("pub-message", {
+      message: encryptWithPublicKey(publicKey, message).toString(),
+    });
+
+    if (socketRef.current) {
+      setChats((prev) => [
+        ...prev,
+        {
+          id: 1,
+          message: message.trim(),
+          client: socketRef.current?.id ?? "",
+        },
+      ]);
+    }
+
+    setMessage("");
+  }, [message]);
+
   const handleKeyPress = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-        if (!message.trim() || !socketRef.current) return;
-
-        if (message.length > 80) {
-          toast.warning("80자를 초과해서 전송할 수 없습니다.");
-          setMessage("");
-          return;
-        }
-
-        const publicKey = localStorage.getItem("other-public-key") as string;
-
-        socketRef.current?.emit("pub-message", {
-          message: encryptWithPublicKey(publicKey, message).toString(),
-        });
-
-        if (socketRef.current) {
-          setChats((prev) => [
-            ...prev,
-            {
-              id: 1,
-              message: message.trim(),
-              client: socketRef.current?.id ?? "",
-            },
-          ]);
-        }
-
-        setMessage("");
-        e.preventDefault();
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+        sendMessage();
+        event.preventDefault();
+        chatScrollDown();
       }
+    },
+    [sendMessage]
+  );
 
+  const onClickSendButton = useCallback(
+    (event: MouseEvent) => {
+      sendMessage();
+      event.preventDefault();
       chatScrollDown();
     },
-    [message, socketRef]
+    [sendMessage]
   );
 
   // 채팅이 종료되지 않은 경우에만 입력할 수 있게
@@ -206,6 +219,10 @@ export default function Page() {
 
       <div className="fixed w-full bottom-0">
         <div className="mx-auto flex gap-x-2 sm:w-1/2 p-2">
+          <button className="btn btn-square btn-secondary" onClick={onQuit}>
+            <IconDoorExit size={18} />
+          </button>
+
           <input
             value={message}
             onKeyDown={handleKeyPress}
@@ -215,8 +232,8 @@ export default function Page() {
             className="input"
           />
 
-          <button className="btn btn-primary" onClick={onQuit}>
-            나가기
+          <button className="btn btn-primary" onClick={onClickSendButton}>
+            전송하기
           </button>
         </div>
       </div>
