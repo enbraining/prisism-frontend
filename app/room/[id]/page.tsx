@@ -125,7 +125,7 @@ export default function Page() {
 
   return (
     <main>
-      <div className="bg-base-200 mx-auto sm:w-1/2 w-full overflow-y-auto p-5 pt-15 h-[100vh]">
+      <div className="bg-base-200 mx-auto sm:w-1/2 w-full overflow-y-auto p-5 pt-32 h-[100vh]">
         {chats.map((chat, index) =>
           chat.client == "JOIN" || chat.client == "END" ? (
             <div className="w-full flex my-3 text-neutral-500" key={index}>

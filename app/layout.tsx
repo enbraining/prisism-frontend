@@ -21,12 +21,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${pretendard.className} ${pretendard.style} max-h-screen`}
-      >
+      <body className={`${pretendard.className} ${pretendard.style}`}>
         <Header />
-        <ToastContainer autoClose={2000} />
         {children}
+        <ToastContainer autoClose={2000} />
       </body>
     </html>
   );

@@ -12,8 +12,8 @@ export default function Home() {
   });
 
   return (
-    <div className="grid">
-      <div className="pt-20 min-h-screen mx-auto sm:w-1/2 w-[90%]">
+    <div className="grid pt-32">
+      <div className="min-h-screen mx-auto sm:w-1/2 w-[90%]">
         <div className="space-x-3 mb-6 flex items-center">
           <Link
             href={"/room/create"}
