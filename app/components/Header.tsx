@@ -3,6 +3,7 @@
 import Link from "next/link";
 import useSWR from "swr";
 import { AxiosInstance } from "../util/axios";
+import { IconEyeDotted } from "@tabler/icons-react";
 
 export default function Header() {
   const fetcher = (url: string) =>
@@ -20,7 +21,10 @@ export default function Header() {
         >
           prisism
         </Link>
-        <p className="ml-auto text-base-content">{data?.count}</p>
+        <div className="ml-auto flex items-center gap-x-2 text-base-content">
+          <IconEyeDotted size={20} />
+          <p>{data?.count ?? 0}</p>
+        </div>
       </nav>
     </div>
   );
